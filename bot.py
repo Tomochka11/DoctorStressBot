@@ -26,7 +26,6 @@ SYSTEM_PROMPT = """
 """
 
 # ========== КОСТЫЛЬ ДЛЯ RENDER (ВЕБ-СЕРВЕР) ==========
-# Этот мини-сервер отвечает хостингу на порту, чтобы бот не выключался
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -35,10 +34,10 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"Bot is alive!")
 
     def log_message(self, format, *args):
-        return  # Отключаем лишний спам в логи
+        return
 
 def run_health_check_server():
-    port = int(os.environ.get("PORT", 10000))  # Render сам выдает порт
+    port = int(os.environ.get("PORT", 10000))
     server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
     server.serve_forever()
 
@@ -50,14 +49,16 @@ async def ask_deepseek(history: list) -> str:
     }
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
     data = {
-    "model": "deepseek-v4-flash",  # <--- ВСТАВЬТЕ ЭТО НАЗВАНИЕ
-    "messages": messages,
-        }
+        "model": "deepseek-v4-flash",
+        "messages": messages,
+        "temperature": 0.9,
+        "max_tokens": 1024
+    }
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(DEEPSEEK_URL, headers=headers, json=data, timeout=30)
             response.raise_for_status()
-            return response.json()["choices"][0]["message"]["content"]
+            return response.json()["choices"]["message"]["content"]
         except Exception as e:
             logging.error(f"DeepSeek error: {e}")
             return "⚠️ Что-то пошло не так в моих электронных мозгах. Попробуй позже."
@@ -120,7 +121,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.error(f"Update {update} caused error {context.error}")
 
-# ========== ЗАПУСК ==========
+# ========== ЗАПУСК (Фикс для Python 3.14+) ==========
 async def start_bot():
     logging.basicConfig(level=logging.INFO)
     
@@ -128,7 +129,6 @@ async def start_bot():
         print("❌ ОШИБКА: Не заданы переменные окружения!")
         return
 
-    # Запускаем фоновый веб-сервер для прохождения проверки портов Render
     server_thread = Thread(target=run_health_check_server, daemon=True)
     server_thread.start()
     print("🌐 Вспомогательный веб-сервер для хостинга успешно запущен.")
@@ -141,17 +141,14 @@ async def start_bot():
 
     print("✅ Бот Доктор Стресс запущен и готов к работе!")
     
-    # Этот метод корректно инициализирует polling в Python 3.14+
     await app.initialize()
     await app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
     await app.start()
     
-    # Держим бота запущенным
     while True:
         await asyncio.sleep(3600)
 
 def main():
-    # Жестко принудительно создаем event loop для Python 3.14
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
