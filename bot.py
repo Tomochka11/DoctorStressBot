@@ -44,7 +44,9 @@ def run_health_check_server():
 async def ask_deepseek(history: list) -> str:
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://onrender.com",  # Ссылка на ваш проект
+        "X-Title": "Doctor Stress Bot"     
     }
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
     data = {
