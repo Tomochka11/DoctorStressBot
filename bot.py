@@ -54,7 +54,7 @@ async def ask_deepseek(history: list) -> str:
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
     
     data = {
-        "model": "meta-llama/llama-3-8b-instruct:free",  # Бесплатная стабильная модель
+         "model": "meta-llama/llama-3.1-8b-instruct:free",  # Обновили на актуальную версию 3.1
         "messages": messages,
         "temperature": 0.9,
         "max_tokens": 1024
