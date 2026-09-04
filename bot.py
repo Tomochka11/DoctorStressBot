@@ -76,7 +76,21 @@ async def ask_deepseek(history: list) -> str:
             if response.status_code != 200:
                 return f"❌ Ошибка OpenRouter! Код: {response.status_code}. Текст: {response.text}"
                 
-            return response.json()["choices"]["message"]["content"]
+           res_data = response.json()
+            
+            # Проверяем стандартный формат OpenAI / OpenRouter
+            if "choices" in res_data:
+                choices = res_data["choices"]
+                if isinstance(choices, list) and len(choices) > 0:
+                    choice = choices[0]
+                    if isinstance(choice, dict) and "message" in choice:
+                        return choice["message"]["content"]
+                    
+            # Если OpenRouter прислал нестандартный текстовый ответ
+            if "content" in res_data:
+                return res_data["content"]
+                
+            return f"❌ Необычный формат ответа от ИИ. Вот что пришло: {str(res_data)}"
             
         except ValueError:
             return f"❌ Ошибка сервера: OpenRouter вернул некорректный ответ (Код {response.status_code})."
