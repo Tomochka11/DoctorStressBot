@@ -42,28 +42,47 @@ def run_health_check_server():
 
 # ========== ФУНКЦИЯ ЗАПРОСА К DEEPSEEK ==========
 async def ask_deepseek(history: list) -> str:
+    # Жестко прописываем заголовки OpenRouter
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://onrender.com",  # Ссылка на ваш проект
-        "X-Title": "Doctor Stress Bot"     
+        "HTTP-Referer": "https://onrender.com",
+        "X-Title": "Doctor Stress Bot"
     }
+    
+    # Собираем контекст сообщений
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
+    
     data = {
-        "model": "meta-llama/llama-3-8b-instruct:free",
+        "model": "meta-llama/llama-3-8b-instruct:free",  # Бесплатная стабильная модель
         "messages": messages,
         "temperature": 0.9,
         "max_tokens": 1024
     }
+    
+    # Прямо внутри запроса жестко указываем метод .post() и точный URL OpenRouter
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(DEEPSEEK_URL, headers=headers, json=data, timeout=30)
+            response = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions", 
+                headers=headers, 
+                json=data, 
+                timeout=30
+            )
+            
+            if response.status_code == 401:
+                return "❌ Ошибка 401: Неверный API-ключ OpenRouter в настройках Render!"
+                
             if response.status_code != 200:
-                return f"❌ Ошибка DeepSeek API! Код ответа: {response.status_code}. Текст: {response.text}"
+                return f"❌ Ошибка OpenRouter! Код: {response.status_code}. Текст: {response.text}"
+                
             return response.json()["choices"]["message"]["content"]
+            
+        except ValueError:
+            return f"❌ Ошибка сервера: OpenRouter вернул некорректный ответ (Код {response.status_code})."
         except Exception as e:
             logging.error(f"Error: {e}")
-            return f"⚠️ Ошибка сети или сервера: {str(e)}"
+            return f"⚠️ Ошибка сети: {str(e)}"
 
 # ========== ОБРАБОТЧИКИ КОМАНД ==========
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
