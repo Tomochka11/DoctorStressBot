@@ -60,9 +60,13 @@ async def ask_deepseek(history: list) -> str:
             response.raise_for_status()
             return response.json()["choices"]["message"]["content"]
         except Exception as e:
-            logging.error(f"DeepSeek error: {e}")
-            return "⚠️ Что-то пошло не так в моих электронных мозгах. Попробуй позже."
-
+            except httpx.HTTPStatusError as e:
+            logging.error(f"DeepSeek HTTP error: {e.response.status_code} - {e.response.text}")
+            return f"❌ Ошибка DeepSeek API (Код {e.response.status_code}): {e.response.text}"
+        except Exception as e:
+            logging.error(f"General error: {e}")
+            return f"⚠️ Системная ошибка: {str(e)}"
+            
 # ========== ОБРАБОТЧИКИ КОМАНД ==========
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["history"] = []
