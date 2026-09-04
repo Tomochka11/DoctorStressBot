@@ -10,7 +10,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 # ========== НАСТРОЙКИ ==========
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
-DEEPSEEK_URL = "https://deepseek.com"
+DEEPSEEK_URL = "https://openrouter.ai"
 
 SYSTEM_PROMPT = """
 Ты — Доктор Стресс, циничный, ироничный и жесткий провокативный терапевт. 
@@ -48,7 +48,7 @@ async def ask_deepseek(history: list) -> str:
     }
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
     data = {
-        "model": "deepseek-chat",
+        "model": "meta-llama/llama-3-8b-instruct:free",
         "messages": messages,
         "temperature": 0.9,
         "max_tokens": 1024
