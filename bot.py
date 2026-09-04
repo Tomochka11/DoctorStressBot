@@ -7,7 +7,7 @@ from threading import Thread
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# ========== НАСТРОЙКИ (Актуально на 2026 год) ==========
+# ========== НАСТРОЙКИ ==========
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_URL = "https://deepseek.com"
@@ -32,7 +32,6 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/plain")
         self.end_headers()
         self.wfile.write(b"Bot is alive!")
-
     def log_message(self, format, *args):
         return
 
@@ -49,7 +48,7 @@ async def ask_deepseek(history: list) -> str:
     }
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
     data = {
-        "model": "deepseek-chat",  # Стандартизированная модель чата
+        "model": "deepseek-chat",
         "messages": messages,
         "temperature": 0.9,
         "max_tokens": 1024
@@ -57,16 +56,13 @@ async def ask_deepseek(history: list) -> str:
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(DEEPSEEK_URL, headers=headers, json=data, timeout=30)
-            response.raise_for_status()
+            if response.status_code != 200:
+                return f"❌ Ошибка DeepSeek API! Код ответа: {response.status_code}. Текст: {response.text}"
             return response.json()["choices"]["message"]["content"]
         except Exception as e:
-            except httpx.HTTPStatusError as e:
-            logging.error(f"DeepSeek HTTP error: {e.response.status_code} - {e.response.text}")
-            return f"❌ Ошибка DeepSeek API (Код {e.response.status_code}): {e.response.text}"
-        except Exception as e:
-            logging.error(f"General error: {e}")
-            return f"⚠️ Системная ошибка: {str(e)}"
-            
+            logging.error(f"Error: {e}")
+            return f"⚠️ Ошибка сети или сервера: {str(e)}"
+
 # ========== ОБРАБОТЧИКИ КОМАНД ==========
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["history"] = []
