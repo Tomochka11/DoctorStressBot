@@ -42,29 +42,26 @@ def run_health_check_server():
 
 # ========== ФУНКЦИЯ ЗАПРОСА К DEEPSEEK ==========
 async def ask_deepseek(history: list) -> str:
-    # Жестко прописываем заголовки OpenRouter
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://onrender.com",
+        "HTTP-Referer": "https://doctorstressbot.onrender.com",
         "X-Title": "Doctor Stress Bot"
     }
     
-    # Собираем контекст сообщений
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
     
     data = {
-          "model": "openrouter/free",  # Универсальный роутер, который сам выберет живую модель бесплатно!
+        "model": "openrouter/free",
         "messages": messages,
         "temperature": 0.9,
         "max_tokens": 1024
     }
     
-    # Прямо внутри запроса жестко указываем метод .post() и точный URL OpenRouter
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions", 
+                "https://openrouter.ai", 
                 headers=headers, 
                 json=data, 
                 timeout=30
@@ -76,17 +73,16 @@ async def ask_deepseek(history: list) -> str:
             if response.status_code != 200:
                 return f"❌ Ошибка OpenRouter! Код: {response.status_code}. Текст: {response.text}"
                 
-           res_data = response.json()
+            res_data = response.json()
             
-            # Проверяем стандартный формат OpenAI / OpenRouter
+            # Адаптивный разбор ответа (без ошибок индексации)
             if "choices" in res_data:
                 choices = res_data["choices"]
                 if isinstance(choices, list) and len(choices) > 0:
-                    choice = choices[0]
+                    choice = choices[0]  # Извлекли первый элемент списка
                     if isinstance(choice, dict) and "message" in choice:
                         return choice["message"]["content"]
-                    
-            # Если OpenRouter прислал нестандартный текстовый ответ
+                        
             if "content" in res_data:
                 return res_data["content"]
                 
