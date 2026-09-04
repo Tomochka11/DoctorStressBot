@@ -7,7 +7,7 @@ from threading import Thread
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# ========== НАСТРОЙКИ ==========
+# ========== НАСТРОЙКИ (Актуально на 2026 год) ==========
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_URL = "https://deepseek.com"
@@ -49,7 +49,7 @@ async def ask_deepseek(history: list) -> str:
     }
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
     data = {
-        "model": "deepseek-v4-flash",
+        "model": "deepseek-chat",  # Стандартизированная модель чата
         "messages": messages,
         "temperature": 0.9,
         "max_tokens": 1024
