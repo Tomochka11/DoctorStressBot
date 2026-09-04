@@ -123,7 +123,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.error(f"Update {update} caused error {context.error}")
 
 # ========== ЗАПУСК ==========
-def main():
+async def start_bot():
     logging.basicConfig(level=logging.INFO)
     
     if not TELEGRAM_TOKEN or not DEEPSEEK_API_KEY:
@@ -142,7 +142,25 @@ def main():
     app.add_error_handler(error_handler)
 
     print("✅ Бот Доктор Стресс запущен и готов к работе!")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    
+    # Этот метод корректно инициализирует polling в Python 3.14+
+    await app.initialize()
+    await app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+    await app.start()
+    
+    # Держим бота запущенным
+    while True:
+        await asyncio.sleep(3600)
+
+def main():
+    # Жестко принудительно создаем event loop для Python 3.14
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+    loop.run_until_complete(start_bot())
 
 if __name__ == "__main__":
     main()
