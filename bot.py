@@ -50,11 +50,9 @@ async def ask_deepseek(history: list) -> str:
     }
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
     data = {
-        "model": "deepseek-chat",
-        "messages": messages,
-        "temperature": 0.9,
-        "max_tokens": 1024
-    }
+    "model": "deepseek-v4-flash",  # <--- ВСТАВЬТЕ ЭТО НАЗВАНИЕ
+    "messages": messages,
+        }
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(DEEPSEEK_URL, headers=headers, json=data, timeout=30)
