@@ -10,7 +10,6 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 # ========== НАСТРОЙКИ ==========
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
-DEEPSEEK_URL = "https://openrouter.ai"
 
 SYSTEM_PROMPT = """
 Ты — Доктор Стресс, циничный, ироничный и жесткий провокативный терапевт. 
@@ -40,7 +39,7 @@ def run_health_check_server():
     server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
     server.serve_forever()
 
-# ========== ФУНКЦИЯ ЗАПРОСА К DEEPSEEK ==========
+# ========== ФУНКЦИЯ ЗАПРОСА К DEEPSEEK (OPENROUTER) ==========
 async def ask_deepseek(history: list) -> str:
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
@@ -75,11 +74,11 @@ async def ask_deepseek(history: list) -> str:
                 
             res_data = response.json()
             
-            # Адаптивный разбор ответа (без ошибок индексации)
+            # Точный и безопасный разбор ответа OpenRouter (фикс кода 200)
             if "choices" in res_data:
                 choices = res_data["choices"]
                 if isinstance(choices, list) and len(choices) > 0:
-                    choice = choices[0]  # Извлекли первый элемент списка
+                    choice = choices[0]  # Берем первый элемент списка
                     if isinstance(choice, dict) and "message" in choice:
                         return choice["message"]["content"]
                         
